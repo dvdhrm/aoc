@@ -116,4 +116,63 @@ pub mod aoc22 {
         print!("{:?}\n", score);
         print!("{:?}\n", score2);
     }
+
+    /// Day3
+    pub fn day3() {
+        let input = std::io::BufRead::lines(std::io::stdin().lock()).map(
+            |v| {
+                let line = v.unwrap();
+                let n_line = line.len();
+
+                assert!(n_line > 0);
+                assert!((n_line % 2) == 0);
+
+                let (l1, l2) = line.split_at(n_line / 2);
+                let h1 = std::collections::hash_set::HashSet::<u8>::from_iter(l1.bytes());
+                let h2 = std::collections::hash_set::HashSet::<u8>::from_iter(l2.bytes());
+
+                *h1.intersection(&h2).next().unwrap()
+            },
+        ).collect::<Vec<u8>>();
+
+        let score: u64 = input.iter().map(
+            |v| {
+                if *v >= b'a' && *v <= b'z' {
+                    (*v - b'a' + 1) as u64
+                } else {
+                    assert!(*v >= b'A' && *v <= b'Z');
+                    (*v - b'A' + 27) as u64
+                }
+            },
+        ).sum();
+
+        print!("{:?}\n", score);
+    }
+
+    /// Day3_2
+    pub fn day3_2() {
+        let input = std::io::BufRead::lines(std::io::stdin().lock()).map(|v| v.unwrap()).collect::<Vec<String>>();
+        let chunked = input.chunks(3).map(
+            |v| {
+                let h1 = std::collections::hash_set::HashSet::<u8>::from_iter(v[0].bytes());
+                let h2 = std::collections::hash_set::HashSet::<u8>::from_iter(v[1].bytes());
+                let h3 = std::collections::hash_set::HashSet::<u8>::from_iter(v[2].bytes());
+                let t = h1.intersection(&h2).copied().collect::<std::collections::hash_set::HashSet<u8>>();
+                *t.intersection(&h3).next().unwrap()
+            }
+        ).collect::<Vec<u8>>();
+
+        let score: u64 = chunked.iter().map(
+            |v| {
+                if *v >= b'a' && *v <= b'z' {
+                    (*v - b'a' + 1) as u64
+                } else {
+                    assert!(*v >= b'A' && *v <= b'Z');
+                    (*v - b'A' + 27) as u64
+                }
+            },
+        ).sum();
+
+        print!("{:?}\n", score);
+    }
 }
