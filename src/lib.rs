@@ -175,4 +175,43 @@ pub mod aoc22 {
 
         print!("{:?}\n", score);
     }
+
+    /// Day4
+    pub fn day4() {
+        let input = std::io::BufRead::lines(std::io::stdin().lock()).map(
+            |v| {
+                let line = v.unwrap();
+                let pair = line.split(",").collect::<Vec<&str>>();
+                assert!(pair.len() == 2);
+
+                let p0 = pair[0].split("-").collect::<Vec<&str>>();
+                let p1 = pair[1].split("-").collect::<Vec<&str>>();
+                assert!(p0.len() == 2);
+                assert!(p1.len() == 2);
+
+                (
+                    p0[0].parse::<u64>().unwrap(),
+                    p0[1].parse::<u64>().unwrap(),
+                    p1[0].parse::<u64>().unwrap(),
+                    p1[1].parse::<u64>().unwrap(),
+                )
+            },
+        ).collect::<Vec<(u64, u64, u64, u64)>>();
+
+        let contained = input.iter().filter(
+            |&v| {
+                (v.0 >= v.2 && v.0 <= v.3 && v.1 >= v.2 && v.1 <= v.3) ||
+                (v.2 >= v.0 && v.2 <= v.1 && v.3 >= v.0 && v.3 <= v.1)
+            }
+        ).collect::<Vec<&(u64, u64, u64, u64)>>();
+
+        let overlapped = input.iter().filter(
+            |&v| {
+                !(v.1 < v.2 || v.3 < v.0)
+            }
+        ).collect::<Vec<&(u64, u64, u64, u64)>>();
+
+        print!("{:?}\n", contained.len());
+        print!("{:?}\n", overlapped.len());
+    }
 }
