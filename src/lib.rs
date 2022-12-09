@@ -2,6 +2,8 @@
 
 /// Advent of Code 2022
 pub mod aoc22 {
+    use std::collections::BTreeMap;
+
     /// Day1
     pub fn day1() {
         let input = std::io::stdin().lines().fold(
@@ -213,5 +215,429 @@ pub mod aoc22 {
 
         print!("{:?}\n", contained.len());
         print!("{:?}\n", overlapped.len());
+    }
+
+    /// Day5
+    pub fn day5() {
+        let input = std::io::BufRead::lines(std::io::stdin().lock()).fold(
+            String::new(),
+            |acc, v| { acc + &v.unwrap() + "\n" },
+        );
+        let mut input_split = input.split("\n\n");
+        let init = input_split.next().unwrap();
+        let inst = input_split.next().unwrap();
+
+        let mut init_lines = init.split("\n").map(
+            |x| {
+                (x.to_owned() + " ").as_bytes().chunks(4).map(
+                    |x| {
+                        x[1]
+                    },
+                ).collect::<Vec<u8>>()
+            },
+        ).collect::<Vec<Vec<u8>>>();
+        init_lines.pop();
+
+        let mut stacks = Vec::<Vec<u8>>::new();
+        for layer in init_lines.iter().rev() {
+            if layer.len() >= stacks.len() {
+                stacks.resize(layer.len(), Vec::<u8>::new());
+            }
+            for (idx, entry) in layer.iter().enumerate() {
+                if *entry != 32 {
+                    stacks[idx].push(*entry);
+                }
+            }
+        }
+
+        let mut inst_lines = inst.split("\n").collect::<Vec<&str>>();
+        inst_lines.pop();
+        let inst_args = inst_lines.iter().map(
+            |v| {
+                let s = v.split(" ").collect::<Vec<&str>>();
+                (
+                    s[1].parse::<usize>().unwrap(),
+                    s[3].parse::<usize>().unwrap(),
+                    s[5].parse::<usize>().unwrap(),
+                )
+            },
+        ).collect::<Vec<(usize, usize, usize)>>();
+
+        let mut stacks2 = stacks.clone();
+
+        for i in (&inst_args).iter() {
+            for _ in 0..i.0 {
+                let x = stacks[i.1 - 1].pop().unwrap();
+                stacks[i.2 - 1].push(x);
+            }
+        }
+
+        for i in inst_args {
+            print!("INST: {:?}\n", i);
+            let s = &mut stacks2[i.1 - 1];
+            print!("LEN: {:?}\n", s.len());
+            assert!(s.len() >= i.0);
+            let dropped = s.drain((s.len() - i.0)..(s.len())).collect::<Vec<u8>>();
+            for j in dropped {
+                stacks2[i.2 - 1].push(j);
+            }
+        }
+
+        let top = String::from_utf8(
+            stacks.iter().map(
+                |v| v.last().unwrap(),
+            ).copied().collect::<Vec<u8>>(),
+        ).unwrap();
+        let top2 = String::from_utf8(
+            stacks2.iter().map(
+                |v| v.last().unwrap(),
+            ).copied().collect::<Vec<u8>>(),
+        ).unwrap();
+
+        print!("{:?}\n", top);
+        print!("{:?}\n", top2);
+    }
+
+    /// Day6
+    pub fn day6() {
+        let input = std::io::read_to_string(std::io::stdin().lock()).unwrap();
+        let mut shift = ['0'; 14];
+        let mut n_shift: usize = 0;
+
+        let test = |shift: &[char; 14]| {
+            for (idx, value) in shift.iter().enumerate() {
+                for dup in &shift[(idx + 1)..] {
+                    if dup == value {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        };
+
+        let garb = input.chars().map_while(
+            |v| {
+                if n_shift < shift.len() || test(&shift) {
+                    shift.rotate_left(1);
+                    shift[shift.len() - 1] = v;
+                    n_shift += 1;
+                    Some(v)
+                } else {
+                    None
+                }
+            }
+        ).collect::<Vec<char>>();
+
+        print!("{:?}\n", garb.len());
+    }
+
+    /// Day7
+    pub fn day7() {
+        let input = std::io::read_to_string(std::io::stdin().lock()).unwrap();
+
+        let cmds = input.split("\n$ ").skip(1).map(
+            |v| {
+                let mut lines = v.split("\n");
+                let cmd = lines.next().unwrap().split(" ").collect::<Vec<&str>>();
+                let args = lines.map(|v| v.split(" ").collect::<Vec<&str>>()).collect::<Vec<Vec<&str>>>();
+
+                (cmd, args)
+            },
+        ).collect::<Vec<(Vec<&str>, Vec<Vec<&str>>)>>();
+
+        let mut data: BTreeMap<String, u64> = BTreeMap::new();
+        let mut cwd: Vec<&str> = Vec::new();
+
+        data.insert("/".to_string(), 0);
+
+        for (cmd, res) in cmds {
+            if cmd[0] == "cd" {
+                if cmd[1] == ".." {
+                    cwd.pop();
+                } else {
+                    cwd.push(cmd[1]);
+                }
+            } else if cmd[0] == "ls" {
+                for entry in res {
+                    if entry[0].len() == 0 {
+                        continue;
+                    }
+
+                    let name = if cwd.len() == 0 {
+                        "/".to_string() + entry[1]
+                    } else {
+                        "/".to_string() + &cwd.as_slice().join("/") + "/" + entry[1]
+                    };
+
+                    if entry[0] == "dir" {
+                        assert!(data.insert(name, 0).is_none());
+                    } else {
+                        let size = entry[0].parse::<u64>().unwrap();
+
+                        *data.get_mut("/").unwrap() += size;
+
+                        for i in 0..cwd.len() {
+                            let name = if cwd.len() == 0 {
+                                "/".to_string()
+                            } else {
+                                "/".to_string() + &cwd.as_slice()[0..i+1].join("/")
+                            };
+                            *data.get_mut(&name).unwrap() += size;
+                        }
+                    }
+                }
+            } else {
+                unreachable!();
+            }
+        }
+
+        let sum: u64 = data.values().filter(
+            |v| **v <= 100000,
+        ).map(|v| *v).sum();
+
+        print!("{:?}\n", sum);
+
+        let rsize = data["/"];
+        let diff = 30000000 - (70000000 - rsize);
+
+        let mut ssize = rsize;
+        for &dir in data.values() {
+            if dir >= diff && dir <= ssize {
+                ssize = dir;
+            }
+        }
+
+        print!("{:?}\n", ssize);
+    }
+
+    /// Day8
+    pub fn day8() {
+        let input = std::io::read_to_string(std::io::stdin().lock()).unwrap();
+
+        // Parse input into u8-grid.
+        let grid = input.split("\n").filter(|v| v.len() > 0).map(
+            |v| v.chars().map(
+                |v| v.to_digit(10).unwrap() as u8,
+            ).collect::<Vec<u8>>(),
+        ).collect::<Vec<Vec<u8>>>();
+        let n_rows = grid.len();
+        let n_cols= grid[0].len();
+
+        // Create state-grid.
+        let mut state: Vec::<Vec<bool>> = Vec::new();
+        state.resize(n_rows, Vec::new());
+        for v in state.iter_mut() {
+            v.resize(n_cols, false);
+        }
+
+        // Calculate visible trees.
+        let mut height: isize;
+        let mut value: isize;
+
+        for row in 0..n_rows {
+            // row forwards
+            height = -1;
+            for col in 0..n_cols {
+                value = grid[row][col] as isize;
+                if value > height {
+                    state[row][col] = true;
+                    height = value;
+                }
+            }
+
+            // row backwards
+            height = -1;
+            for col in (0..n_cols).rev() {
+                value = grid[row][col] as isize;
+                if value > height {
+                    state[row][col] = true;
+                    height = value;
+                }
+            }
+        }
+
+        for col in 0..n_cols {
+            // column forwards
+            height = -1;
+            for row in 0..n_rows {
+                value = grid[row][col] as isize;
+                if value > height {
+                    state[row][col] = true;
+                    height = value;
+                }
+            }
+
+            // column backwards
+            height = -1;
+            for row in (0..n_rows).rev() {
+                value = grid[row][col] as isize;
+                if value > height {
+                    state[row][col] = true;
+                    height = value;
+                }
+            }
+        }
+
+        let visible: usize = state.iter().map(
+            |v| v.iter().map(|v| if *v { 1 } else { 0 },).sum::<usize>(),
+        ).sum();
+
+        print!("{:?}\n", visible);
+
+        // Create second state-grid.
+        let mut state2: Vec::<Vec<usize>> = Vec::new();
+        state2.resize(n_rows, Vec::new());
+        for v in state2.iter_mut() {
+            v.resize(n_cols, 1);
+        }
+
+        // Calculate scenic scores.
+        for row in 0..n_rows {
+            for col in 0..n_cols {
+                height = grid[row][col] as isize;
+
+                if row == 0 || row == n_rows-1 || col == 0 || col == n_cols-1 {
+                    state2[row][col] = 0;
+                    continue;
+                }
+
+                // left view
+                for ncol in (0..col).rev() {
+                    value = grid[row][ncol] as isize;
+                    if value >= height || ncol == 0 {
+                        state2[row][col] *= col - ncol;
+                        break;
+                    }
+                }
+
+                // up view
+                for nrow in (0..row).rev() {
+                    value = grid[nrow][col] as isize;
+                    if value >= height || nrow == 0 {
+                        state2[row][col] *= row - nrow;
+                        break;
+                    }
+                }
+
+                // right view
+                for ncol in col+1..n_cols {
+                    value = grid[row][ncol] as isize;
+                    if value >= height || ncol == n_cols-1 {
+                        state2[row][col] *= ncol - col;
+                        break;
+                    }
+                }
+
+                // down view
+                for nrow in row+1..n_rows {
+                    value = grid[nrow][col] as isize;
+                    if value >= height || nrow == n_rows-1 {
+                        state2[row][col] *= nrow - row;
+                        break;
+                    }
+                }
+            }
+        }
+
+        let scenic_max = state2.iter().map(
+            |v| v.iter().max().unwrap(),
+        ).max().unwrap();
+
+        print!("{:?}\n", scenic_max);
+    }
+
+    /// Day9
+    pub fn day9() {
+        let input = std::io::read_to_string(std::io::stdin().lock()).unwrap();
+
+        let inst = input.split("\n").filter(|v| v.len() > 0).map(
+            |v| {
+                let fields = v.split(" ").collect::<Vec<&str>>();
+                assert!(fields.len() == 2);
+                assert!(fields[0].len() == 1);
+
+                (fields[0].chars().next().unwrap(), fields[1].parse::<i32>().unwrap())
+            },
+        ).collect::<Vec<(char, i32)>>();
+
+        let mut grid: BTreeMap<(i32, i32), bool> = BTreeMap::new();
+        let mut head: (i32, i32) = (0, 0);
+        let mut tail: (i32, i32) = (0, 0);
+
+        grid.insert(tail, true);
+
+        for &(dir, len) in inst.iter() {
+            for _ in 0..len {
+                match dir {
+                    'U' => head = (head.0, head.1 + 1),
+                    'R' => head = (head.0 + 1, head.1),
+                    'D' => head = (head.0, head.1 - 1),
+                    'L' => head = (head.0 - 1, head.1),
+                    _ => unreachable!(),
+                }
+
+                if (head.0 - tail.0).abs() > 1 {
+                    tail = (
+                        tail.0 + (head.0 - tail.0) / 2,
+                        head.1,
+                    );
+                } else if (head.1 - tail.1).abs() > 1 {
+                    tail = (
+                        head.0,
+                        tail.1 + (head.1 - tail.1) / 2,
+                    );
+                }
+
+                grid.insert(tail, true);
+            }
+        }
+
+        print!("{:?}\n", grid.len());
+
+        const N: usize = 10;
+        let mut knots: [(i32, i32); N] = [(0, 0); N];
+        let mut grid2: BTreeMap<(i32, i32), bool> = BTreeMap::new();
+
+        grid2.insert(knots[N-1], true);
+
+        for &(dir, len) in inst.iter() {
+            for _ in 0..len {
+                match dir {
+                    'U' => knots[0] = (knots[0].0, knots[0].1 + 1),
+                    'R' => knots[0] = (knots[0].0 + 1, knots[0].1),
+                    'D' => knots[0] = (knots[0].0, knots[0].1 - 1),
+                    'L' => knots[0] = (knots[0].0 - 1, knots[0].1),
+                    _ => unreachable!(),
+                }
+
+                for idx in 1..N {
+                    let head = knots[idx-1];
+                    let tail = &mut knots[idx];
+
+                    if (head.0 - tail.0).abs() > 1 &&
+                       (head.1 - tail.1).abs() > 1 {
+                        *tail = (
+                            tail.0 + (head.0 - tail.0) / 2,
+                            tail.1 + (head.1 - tail.1) / 2,
+                        );
+                    } else if (head.0 - tail.0).abs() > 1 {
+                        *tail = (
+                            tail.0 + (head.0 - tail.0) / 2,
+                            head.1,
+                        );
+                    } else if (head.1 - tail.1).abs() > 1 {
+                        *tail = (
+                            head.0,
+                            tail.1 + (head.1 - tail.1) / 2,
+                        );
+                    }
+                }
+
+                grid2.insert(knots[N-1], true);
+            }
+        }
+
+        print!("{:?}\n", grid2.len());
     }
 }
