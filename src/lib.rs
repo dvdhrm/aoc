@@ -640,4 +640,99 @@ pub mod aoc22 {
 
         print!("{:?}\n", grid2.len());
     }
+
+    /// Day10
+    pub fn day10() {
+        let input = std::io::read_to_string(std::io::stdin().lock()).unwrap();
+
+        let inst = input.split("\n").filter(|v| v.len() > 0).map(
+            |v| {
+                let cmd = v.split(" ").collect::<Vec<&str>>();
+                assert!(cmd.len() > 0);
+                if cmd[0] == "noop" {
+                    assert!(cmd.len() == 1);
+                    (0, 0)
+                } else if cmd[0] == "addx" {
+                    assert!(cmd.len() == 2);
+                    (1, cmd[1].parse::<i8>().unwrap())
+                } else {
+                    unreachable!();
+                }
+            },
+        ).collect::<Vec<(usize, i8)>>();
+
+        let mut x: i64 = 1;
+        let mut cycle: usize = 0;
+        let mut intr: usize = 20;
+        let mut sum: i64 = 0;
+
+        for (code, value) in inst.iter() {
+            let new_x;
+            let new_cycle;
+
+            match code {
+                0 => {
+                    new_cycle = cycle + 1;
+                    new_x = x;
+                },
+                1 => {
+                    new_cycle = cycle + 2;
+                    new_x = x + *value as i64;
+                },
+                _ => unreachable!(),
+            }
+
+            if intr <= new_cycle {
+                sum = sum + (intr as i64) * x;
+                intr = intr + 40;
+            }
+
+            x = new_x;
+            cycle = new_cycle;
+        }
+
+        print!("{:?}\n", sum);
+
+        let mut grid: [[bool; 40]; 6] = [[false; 40]; 6];
+
+        x = 1;
+        cycle = 0;
+
+        for (code, value) in inst.iter() {
+            let new_x;
+            let new_cycle;
+
+            match code {
+                0 => {
+                    new_cycle = cycle + 1;
+                    new_x = x;
+                },
+                1 => {
+                    new_cycle = cycle + 2;
+                    new_x = x + *value as i64;
+                },
+                _ => unreachable!(),
+            }
+
+            while cycle < new_cycle {
+                let h = cycle / 40;
+                let w = cycle % 40;
+                cycle = cycle + 1;
+
+                assert!(h < 6);
+                grid[h][w] = w as i64 >= x - 1 && w as i64 <= x + 1;
+
+                if grid[h][w] {
+                    print!("#");
+                } else {
+                    print!(" ");
+                }
+                if w == 39 {
+                    print!("\n");
+                }
+            }
+
+            x = new_x;
+        }
+    }
 }
