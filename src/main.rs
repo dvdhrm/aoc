@@ -3,5 +3,5 @@
 use aoc;
 
 fn main() {
-    aoc::aoc22::day11();
+    aoc::aoc22::day12();
 }

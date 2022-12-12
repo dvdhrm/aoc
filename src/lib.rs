@@ -851,4 +851,118 @@ pub mod aoc22 {
         cnt.sort();
         print!("{:#?}\n", cnt[cnt.len() - 1] * cnt[cnt.len() - 2]);
     }
+
+    /// Day12
+    pub fn day12() {
+        let input = std::io::read_to_string(std::io::stdin().lock()).unwrap();
+
+        let mut inst = input.split("\n").filter(|v| v.len() > 0).map(
+            |v| v.chars().map(|v| v as u32).collect::<Vec<u32>>(),
+        ).collect::<Vec<Vec<u32>>>();
+
+        let mut todo: BTreeMap<(usize, usize), u64> = BTreeMap::new();
+        let mut done: BTreeMap<(usize, usize), u64> = BTreeMap::new();
+        let mut start = (0, 0);
+        let mut end = (0, 0);
+        let width = inst[0].len();
+        let height = inst.len();
+
+        for (y, row) in inst.iter().enumerate() {
+            for (x, entry) in row.iter().enumerate() {
+                let d = if *entry == 'E' as u32 {
+                    start = (x, y);
+                    0
+                } else {
+                    if *entry == 'S' as u32 {
+                        end = (x, y);
+                    }
+                    u64::MAX - 1
+                };
+
+                todo.insert((x, y), d);
+            }
+        }
+
+        inst[start.1][start.0] = 'z' as u32;
+        inst[end.1][end.0] = 'a' as u32;
+
+        let mut cur_pos = start;
+        loop {
+            let cur_h = inst[cur_pos.1][cur_pos.0];
+            let cur_v = *todo.get(&cur_pos).unwrap();
+
+            if cur_pos.0 > 0 {
+                let neigh_pos = (cur_pos.0 - 1, cur_pos.1);
+                let neigh_h = inst[neigh_pos.1][neigh_pos.0];
+
+                if cur_h <= neigh_h + 1 {
+                    if let Some(neigh_v) = todo.get_mut(&neigh_pos) {
+                        *neigh_v = u64::min(*neigh_v, cur_v + 1);
+                    }
+                }
+            }
+            if cur_pos.1 > 0 {
+                let neigh_pos = (cur_pos.0, cur_pos.1 - 1);
+                let neigh_h = inst[neigh_pos.1][neigh_pos.0];
+
+                if cur_h <= neigh_h + 1 {
+                    if let Some(neigh_v) = todo.get_mut(&neigh_pos) {
+                        *neigh_v = u64::min(*neigh_v, cur_v + 1);
+                    }
+                }
+            }
+            if cur_pos.0 + 1 < width {
+                let neigh_pos = (cur_pos.0 + 1, cur_pos.1);
+                let neigh_h = inst[neigh_pos.1][neigh_pos.0];
+
+                if cur_h <= neigh_h + 1 {
+                    if let Some(neigh_v) = todo.get_mut(&neigh_pos) {
+                        *neigh_v = u64::min(*neigh_v, cur_v + 1);
+                    }
+                }
+            }
+            if cur_pos.1 + 1 < height {
+                let neigh_pos = (cur_pos.0, cur_pos.1 + 1);
+                let neigh_h = inst[neigh_pos.1][neigh_pos.0];
+
+                if cur_h <= neigh_h + 1 {
+                    if let Some(neigh_v) = todo.get_mut(&neigh_pos) {
+                        *neigh_v = u64::min(*neigh_v, cur_v + 1);
+                    }
+                }
+            }
+
+            done.insert(cur_pos, todo.remove(&cur_pos).unwrap());
+
+            if todo.len() == 0 {
+                break;
+            }
+
+            let mut next_pos = (0, 0);
+            let mut next_v = u64::MAX;
+            for (iter_pos, iter_v) in todo.iter() {
+                if *iter_v < next_v {
+                    next_pos = *iter_pos;
+                    next_v = *iter_v;
+                }
+            }
+
+            assert_ne!(next_v, u64::MAX);
+
+            cur_pos = next_pos;
+        }
+
+        print!("END: {:#?}\n", *done.get(&end).unwrap());
+
+        let mut min_v = u64::MAX;
+        for (iter_pos, iter_v) in done.iter() {
+            if inst[iter_pos.1][iter_pos.0] == 'a' as u32 {
+                if *iter_v < min_v {
+                    min_v = *iter_v;
+                }
+            }
+        }
+
+        print!("MIN: {:#?}\n", min_v);
+    }
 }
