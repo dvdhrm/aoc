@@ -735,4 +735,120 @@ pub mod aoc22 {
             x = new_x;
         }
     }
+
+    /// Day11
+    pub fn day11() {
+        let input = std::io::read_to_string(std::io::stdin().lock()).unwrap();
+
+        let inst = input.split("\n\n").map(
+            |v| {
+                let data = v.split("\n")
+                    .filter(|v| v.len() > 0)
+                    .skip(1)
+                    .map(|v| v.split(":").skip(1).next().unwrap().trim())
+                    .collect::<Vec<&str>>();
+
+                assert_eq!(data.len(), 5);
+
+                (
+                    data[0].split(", ").map(|v| v.parse::<u128>().unwrap()).collect::<Vec<u128>>(),
+                    data[1].strip_prefix("new = ").unwrap(),
+                    data[2].strip_prefix("divisible by ").unwrap().parse::<u128>().unwrap(),
+                    data[3].strip_prefix("throw to monkey ").unwrap().parse::<usize>().unwrap(),
+                    data[4].strip_prefix("throw to monkey ").unwrap().parse::<usize>().unwrap(),
+                )
+            },
+        ).collect::<Vec<(Vec<u128>, &str, u128, usize, usize)>>();
+
+        let mut inv: Vec<Vec<u128>> = Vec::new();
+        let mut cnt: Vec<u128> = Vec::new();
+
+        for (items, _, _, _, _) in inst.iter() {
+            inv.push(items.clone());
+            cnt.push(0);
+        }
+
+        for _ in 0..20 {
+            for (idx, mon) in inst.iter().enumerate() {
+                inv.push(Vec::new());
+                let items = inv.swap_remove(idx);
+
+                for item in items {
+                    let mut w = item;
+
+                    w = match mon.1 {
+                        "old * 13" => w * 13,
+                        "old + 4" => w + 4,
+                        "old * 11" => w * 11,
+                        "old + 8" => w + 8,
+                        "old * old" => w * w,
+                        "old + 5" => w + 5,
+                        "old + 1" => w + 1,
+                        "old + 3" => w + 3,
+                        _ => unreachable!(),
+                    };
+
+                    w = w / 3;
+
+                    let target = if w % mon.2 == 0 {
+                        mon.3
+                    } else {
+                        mon.4
+                    };
+
+                    inv[target].push(w);
+                    cnt[idx] = cnt[idx] + 1;
+                }
+            }
+        }
+
+        cnt.sort();
+        print!("{:#?}\n", cnt[cnt.len() - 1] * cnt[cnt.len() - 2]);
+
+        let prod: u128 = inst.iter().map(|v| v.2).product();
+        inv = Vec::new();
+        cnt = Vec::new();
+
+        for (items, _, _, _, _) in inst.iter() {
+            inv.push(items.clone());
+            cnt.push(0);
+        }
+
+        for _ in 0..10000 {
+            for (idx, mon) in inst.iter().enumerate() {
+                inv.push(Vec::new());
+                let items = inv.swap_remove(idx);
+
+                for item in items {
+                    let mut w = item;
+
+                    w = match mon.1 {
+                        "old * 13" => w * 13,
+                        "old + 4" => w + 4,
+                        "old * 11" => w * 11,
+                        "old + 8" => w + 8,
+                        "old * old" => w * w,
+                        "old + 5" => w + 5,
+                        "old + 1" => w + 1,
+                        "old + 3" => w + 3,
+                        _ => unreachable!(),
+                    };
+
+                    w = w % prod;
+
+                    let target = if w % mon.2 == 0 {
+                        mon.3
+                    } else {
+                        mon.4
+                    };
+
+                    inv[target].push(w);
+                    cnt[idx] = cnt[idx] + 1;
+                }
+            }
+        }
+
+        cnt.sort();
+        print!("{:#?}\n", cnt[cnt.len() - 1] * cnt[cnt.len() - 2]);
+    }
 }
