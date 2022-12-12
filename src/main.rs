@@ -3,5 +3,5 @@
 use aoc;
 
 fn main() {
-    aoc::aoc22::day12();
+    aoc::aoc22::day12_alt();
 }

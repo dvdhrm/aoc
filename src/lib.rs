@@ -965,4 +965,107 @@ pub mod aoc22 {
 
         print!("MIN: {:#?}\n", min_v);
     }
+
+    /// Day12 Alternative
+    pub fn day12_alt() {
+        let input = std::io::read_to_string(std::io::stdin().lock()).unwrap();
+
+        let mut inst = input.split("\n").filter(|v| v.len() > 0).map(
+            |v| v.chars().map(|v| v as u32).collect::<Vec<u32>>(),
+        ).collect::<Vec<Vec<u32>>>();
+
+        let mut grid: Vec<Vec<u32>> = Vec::new();
+        let width = inst[0].len();
+        let height = inst.len();
+        let mut start = (0, 0);
+        let mut end = (0, 0);
+
+        for (y, row) in inst.iter().enumerate() {
+            grid.push(Vec::new());
+            for (x, entry) in row.iter().enumerate() {
+                if *entry == 'S' as u32 {
+                    start = (x, y);
+                } else if *entry == 'E' as u32 {
+                    end = (x, y);
+                }
+                grid[y].push(' ' as u32);
+            }
+        }
+
+        inst[start.1][start.0] = 'a' as u32;
+        inst[end.1][end.0] = 'z' as u32;
+
+        for x in 0..width {
+            for y in 0..height {
+                let entry = inst[y][x];
+                let mut dir: [bool; 4] = [false; 4];
+                if x > 0 {
+                    let v = inst[y][x - 1];
+                    dir[0] = entry + 1 >= v;
+                }
+                if x + 1 < width {
+                    let v = inst[y][x + 1];
+                    dir[1] = entry + 1 >= v;
+                }
+                if y > 0 {
+                    let v = inst[y - 1][x];
+                    dir[2] = entry + 1 >= v;
+                }
+                if y + 1 < height {
+                    let v = inst[y + 1][x];
+                    dir[3] = entry + 1 >= v;
+                }
+
+                if dir[0] && dir[1] && dir[2] && dir[3] {
+                    grid[y][x] = 0x254b;
+                } else if dir[0] && dir[1] && dir[2] && !dir[3] {
+                    grid[y][x] = 0x253b;
+                } else if dir[0] && dir[1] && !dir[2] && dir[3] {
+                    grid[y][x] = 0x2533;
+                } else if dir[0] && dir[1] && !dir[2] && !dir[3] {
+                    grid[y][x] = 0x2501;
+                } else if dir[0] && !dir[1] && dir[2] && dir[3] {
+                    grid[y][x] = 0x252b;
+                } else if dir[0] && !dir[1] && dir[2] && !dir[3] {
+                    grid[y][x] = 0x251b;
+                } else if dir[0] && !dir[1] && !dir[2] && dir[3] {
+                    grid[y][x] = 0x2513;
+                } else if dir[0] && !dir[1] && !dir[2] && !dir[3] {
+                    grid[y][x] = 0x2578;
+                } else if !dir[0] && dir[1] && dir[2] && dir[3] {
+                    grid[y][x] = 0x2523;
+                } else if !dir[0] && dir[1] && dir[2] && !dir[3] {
+                    grid[y][x] = 0x2517;
+                } else if !dir[0] && dir[1] && !dir[2] && dir[3] {
+                    grid[y][x] = 0x250f;
+                } else if !dir[0] && dir[1] && !dir[2] && !dir[3] {
+                    grid[y][x] = 0x257a;
+                } else if !dir[0] && !dir[1] && dir[2] && dir[3] {
+                    grid[y][x] = 0x2503;
+                } else if !dir[0] && !dir[1] && dir[2] && !dir[3] {
+                    grid[y][x] = 0x2579;
+                } else if !dir[0] && !dir[1] && !dir[2] && dir[3] {
+                    grid[y][x] = 0x257b;
+                } else if !dir[0] && !dir[1] && !dir[2] && !dir[3] {
+                    grid[y][x] = ' ' as u32;
+                }
+            }
+        }
+
+        for y in 0..height {
+            for x in 0..width {
+                let v = grid[y][x];
+                if (x, y) == start {
+                    print!("S");
+                } else if (x, y) == end {
+                    print!("E");
+                } else if v == 0 {
+                    print!(" ");
+                } else {
+                    print!("{}", char::from_u32(v).unwrap());
+                }
+            }
+            print!("\n");
+        }
+    }
 }
